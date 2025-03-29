@@ -1,3 +1,13 @@
+variable "public_key" {
+  description = "SSH public key for VM access"
+  type        = string
+}
+
+variable "subscription_id" {
+  description = "Azure Subscription ID"
+  type        = string
+}
+
 provider "azurerm" {
   features {}
 
