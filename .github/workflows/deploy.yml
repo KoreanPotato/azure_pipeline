@@ -1,0 +1,69 @@
+name: CI/CD_PIPELINE
+
+on:
+  push:
+    branches: [ main ]
+
+jobs: 
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_public_key: "${{ secrets.SSH_PUBLIC_KEY }}"
+      TF_VAR_subscription_id: "${{ secrets.SUBSCRIPTION_ID }}"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+      
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Write SSH key
+        run: | 
+           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+           chmod 600 ~/.ssh/id_rsa
+
+      - name: Initialization .ini file
+        run: |
+          echo "[azure]" > ansible/inventory.ini
+
+      - name: Copying secret data 
+        run: |
+          echo "${{ secrets.SSH_USER }}@${{ secrets.SSH_IP }} ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+
+      - name: Set up ansible
+        run: |
+          sudo apt update && sudo apt install -y ansible sshpass
+
+      - name: Configure azure usung ansible
+        run: |
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            ansible-playbook -i ansible/inventory.ini ansible/setup.yml
+
+      - name: Build & Push docker image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          docker login -u "${{ DOCKER_USERNAME }}" -p "${{ DOCKER_PASSWORD }}"
+          docker-compose -f docker-compose.yml build
+          docker-compose -f docker-compose.yml push
+
+      - name: Deploy with Ansible
+        run: |
+          export ANSIBLE_HOST_KEY_CHECKING=False
+          ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+          --extra-vars '
+          {
+            "backend_image": "${{ secrets.DOCKER_USERNAME }}/azureapp-backend:latest",
+            "frontend_image": "${{ secrets.DOCKER_USERNAME }}/azureapp-frontend:latest",
+            "docker_username": "${{ secrets.DOCKER_USERNAME }}",
+            "docker_password": "${{ secrets.DOCKER_PASSWORD }}"
+          }'

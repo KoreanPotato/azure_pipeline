@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/azureapp-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    ports:
+      - "3001:3001"
+    networks:
+      - app-network
+
+  frontend:
+    image: ${DOCKER_USERNAME}/azureapp-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:

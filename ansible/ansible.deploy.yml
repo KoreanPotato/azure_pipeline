@@ -1,0 +1,17 @@
+- hosts: azure
+  become: true
+  tasks:
+    - name: Log in to Docker Hub
+      shell: echo "{{ docker_password }}" | docker login -u "{{ docker_username }}" --password-stdin
+      
+    - name: Pull backend
+      shell: docker pull {{ backend_image }}
+
+    - name: Pull frontend
+      shell: docker pull {{ frontend_image }}
+
+    - name: Run backend
+      shell: docker run -d -p 3001:3001 {{ backend_image }}
+
+    - name: Run frontend
+      shell: docker run -d -p 3000:3000 {{ frontend_image }}
