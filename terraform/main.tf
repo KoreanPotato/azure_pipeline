@@ -11,7 +11,7 @@ variable "subscription_id" {
 provider "azurerm" {
   features {}
 
-  subscription_id = "subscription_id"
+  subscription_id = var.subscription_id
   resource_provider_registrations = "none"
 }
 
@@ -83,7 +83,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   admin_ssh_key {
     username   = "sergey"
-    public_key = "public_key"
+    public_key = var.public_key
   }
 
   os_disk {
