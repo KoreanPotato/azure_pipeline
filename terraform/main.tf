@@ -8,10 +8,29 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "client_id" {
+  type        = string
+  description = "Azure client ID"
+}
+
+variable "client_secret" {
+  type        = string
+  description = "Azure client secret"
+}
+
+variable "tenant_id" {
+  type        = string
+  description = "Azure tenant ID"
+}
+
 provider "azurerm" {
   features {}
 
   subscription_id = var.subscription_id
+  subscription_id = var.subscription_id
+  client_id       = var.client_id
+  client_secret   = var.client_secret
+  tenant_id       = var.tenant_id
   resource_provider_registrations = "none"
 }
 
