@@ -39,6 +39,21 @@ jobs:
       #         break
       #       fi
       #     done
+
+
+      - name: Delete VM if exists
+        run: |
+          az vm delete \
+            --name UbuntuVM \
+            --resource-group myResourceGroup \
+            --yes || true
+
+          az network nic delete \
+            --name myNIC \
+            --resource-group myResourceGroup || true
+
+      - name: Wait for Azure to release deleted resources
+        run: sleep 30
       
       - name: Terraform Init & Apply
         run: |

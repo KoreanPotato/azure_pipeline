@@ -42,7 +42,7 @@ data "azurerm_resource_group" "rg" {
   name = "myResourceGroup"
 }
 
-# === EXISTING RESOURCES === (если уже есть вручную — подключаем через data)
+# === EXISTING RESOURCES === 
 
 data "azurerm_virtual_network" "vnet" {
   name                = "myVNet"
@@ -75,7 +75,7 @@ resource "azurerm_network_interface" "nic" {
   ip_configuration {
     name                          = "myNICConfig"
     subnet_id                     = data.azurerm_subnet.subnet.id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = "Static"
     public_ip_address_id          = data.azurerm_public_ip.public_ip.id
   }
 }
