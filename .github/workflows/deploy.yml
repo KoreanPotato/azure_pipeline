@@ -23,6 +23,14 @@ jobs:
         with:
           terraform_version: 1.6.6
 
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+
+
       # - name: Delete resource group if exists
       #   run: |
       #     az group delete --name myResourceGroup --yes --no-wait || true
