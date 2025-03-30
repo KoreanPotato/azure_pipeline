@@ -103,7 +103,7 @@ jobs:
       - name: Configure azure usung ansible
         run: |
             export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -i ansible/inventory.ini ansible/setup.yml
+            ansible-playbook -i ansible/inventory.ini ansible/ansible.setup.yml
 
       - name: Build & Push docker image
         env:
