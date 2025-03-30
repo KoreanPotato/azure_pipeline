@@ -6,6 +6,10 @@
         name: docker.io
         state: present
         update_cache: yes
+      register: docker_install_result
+
+    - debug:
+        var: docker_install_result
 
     - name: Enable and start Docker
       systemd:
@@ -17,3 +21,5 @@
       user:
         name: sergey
         groups: docker
+
+
