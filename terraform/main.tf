@@ -33,36 +33,35 @@ provider "azurerm" {
   resource_provider_registrations = "none"
 }
 
-resource "azurerm_resource_group" "rg" {
-  name     = "myResourceGroup"
-  location = "West Europe"
+data "azurerm_resource_group" "rg" {
+  name = "myResourceGroup"
 }
 
 resource "azurerm_virtual_network" "vnet" {
   name                = "myVNet"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 resource "azurerm_subnet" "subnet" {
   name                 = "mySubnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_public_ip" "public_ip" {
   name                = "myPublicIP"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   allocation_method   = "Static"
 }
 
 resource "azurerm_network_interface" "nic" {
   name                = "myNIC"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "myNICConfig"
@@ -74,8 +73,8 @@ resource "azurerm_network_interface" "nic" {
 
 resource "azurerm_network_security_group" "nsg" {
   name                = "ssh-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Allow-SSH"
@@ -92,8 +91,8 @@ resource "azurerm_network_security_group" "nsg" {
 
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = "UbuntuVM"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   size                = "Standard_B1s"
   admin_username      = "sergey"
 
