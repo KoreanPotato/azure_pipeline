@@ -29,6 +29,9 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
+      - name: Wait for Azure 
+        run: sleep 60
+
       - name: Get Terraform output (public IP)
         id: get_ip
         run: |
