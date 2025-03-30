@@ -79,11 +79,9 @@ jobs:
           cd terraform
           RAW=$(terraform output public_ip_address)
           
-          # Извлекаем только IP (обрежем по пробелу или кавычкам)
-          IP=$(echo "$RAW" | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
-          
-          echo "🧪 Полученный IP: $IP"
+          IP=$(terraform output public_ip_address | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
           echo "ip=$IP" >> $GITHUB_ENV
+
 
       - name: Write SSH key
         run: | 
