@@ -36,7 +36,7 @@ jobs:
         id: get_ip
         run: |
           cd terraform
-          echo "ip=$(terraform output -raw public_ip_address)" >> $GITHUB_OUTPUT
+          echo "ip=$(terraform output -raw public_ip_address)" >> $GITHUB_ENV
 
       - name: Write SSH key
         run: | 
