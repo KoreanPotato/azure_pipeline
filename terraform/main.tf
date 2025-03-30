@@ -59,13 +59,10 @@ data "azurerm_network_security_group" "nsg" {
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 
-# === CREATE SUBNET ===
-
-resource "azurerm_subnet" "subnet" {
+data "azurerm_subnet" "subnet" {
   name                 = "mySubnet"
-  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = data.azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
+  resource_group_name  = data.azurerm_resource_group.rg.name
 }
 
 # === CREATE NIC ===
@@ -77,7 +74,7 @@ resource "azurerm_network_interface" "nic" {
 
   ip_configuration {
     name                          = "myNICConfig"
-    subnet_id                     = azurerm_subnet.subnet.id
+    subnet_id                     = data.azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = data.azurerm_public_ip.public_ip.id
   }
