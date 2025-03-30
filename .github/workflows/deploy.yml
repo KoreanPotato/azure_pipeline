@@ -75,10 +75,21 @@ jobs:
         run: sleep 60
 
       - name: Get Terraform output (public IP)
-        id: get_ip
         run: |
           cd terraform
-          echo "ip=$(terraform output -raw public_ip_address | tr -d '\r')" >> $GITHUB_ENV
+
+          echo "⬇️ Terraform raw output:"
+          terraform output public_ip_address
+
+          echo "⬇️ Terraform -raw output:"
+          terraform output -raw public_ip_address
+
+          # Сохраняем IP в переменную
+          IP=$(terraform output -raw public_ip_address)
+          echo "Сохраняем IP: $IP"
+
+          # Безопасно пишем в GITHUB_ENV
+          echo "ip=$IP" >> $GITHUB_ENV
 
       - name: Write SSH key
         run: | 
