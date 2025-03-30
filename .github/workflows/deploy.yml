@@ -93,8 +93,7 @@ jobs:
 
       - name: Copying secret data
         run: |
-          echo "${{ secrets.SSH_USER }}@${{ env.PUBLIC_IP }} ansible_ssh_private_key_file=~/.ssh/id_rsa" \
-            >> ansible/inventory.ini
+          echo "${{ env.PUBLIC_IP }} ansible_user=${{ secrets.SSH_USER }} ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
 
       - name: Set up ansible
         run: |
