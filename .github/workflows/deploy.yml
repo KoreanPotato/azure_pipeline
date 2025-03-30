@@ -22,6 +22,10 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
+
+      - name: Delete resource group if exists
+        run: |
+          az group delete --name myResourceGroup --yes --no-wait || true
       
       - name: Terraform Init & Apply
         run: |
