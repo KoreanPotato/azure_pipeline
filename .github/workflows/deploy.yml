@@ -26,6 +26,19 @@ jobs:
       - name: Delete resource group if exists
         run: |
           az group delete --name myResourceGroup --yes --no-wait || true
+        
+      - name: Wait for Azure to finish deleting RG
+        run: |
+          for i in {1..30}; do
+            echo "Checking if group still exists..."
+            if az group exists --name myResourceGroup | grep true; then
+              echo "Group still exists. Waiting 10s..."
+              sleep 10
+            else
+              echo "Group deleted!"
+              break
+            fi
+          done
       
       - name: Terraform Init & Apply
         run: |
@@ -39,8 +52,9 @@ jobs:
       - name: Get Terraform output (public IP)
         id: get_ip
         run: |
-          cd terraform
-          echo "ip=$(terraform output -raw public_ip_address)" >> $GITHUB_ENV
+           cd terraform
+           IP=$(terraform output -raw public_ip_address)
+           echo "ip=$IP" >> $GITHUB_ENV
 
       - name: Write SSH key
         run: | 
