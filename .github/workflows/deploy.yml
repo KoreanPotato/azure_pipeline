@@ -77,11 +77,10 @@ jobs:
       - name: Get Terraform output (public IP)
         run: |
           cd terraform
-          IP=$(terraform output public_ip_address | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
+          IP=$(terraform output -raw public_ip_address | tr -d '\r\n')
           echo "Полученный IP: $IP"
-
-          # Единственная запись в $GITHUB_ENV: PUBLIC_IP=...
           echo "PUBLIC_IP=$IP" >> $GITHUB_ENV
+
 
 
 
