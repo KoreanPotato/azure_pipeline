@@ -117,7 +117,7 @@ jobs:
       - name: Deploy with Ansible
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
-          ansible-playbook -i ansible/inventory.ini ansible/deploy.yml \
+          ansible-playbook -i ansible/inventory.ini ansible/ansible.deploy.yml \
           --extra-vars '
           {
             "backend_image": "${{ secrets.DOCKER_USERNAME }}/azureapp-backend:latest",
