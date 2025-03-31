@@ -46,6 +46,7 @@ jobs:
         run: |
           cd terraform
           IP=$(terraform output -raw public_ip_address | tr -d '\r\n')
+          echo "Полученный IP: $IP"
           echo "ip=$IP" >> $GITHUB_OUTPUT
 
 
