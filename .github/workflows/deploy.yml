@@ -30,7 +30,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Clean up old VM (optional)
+      - name: Clean up old VM (if exists)
         run: |
           az vm delete --name UbuntuVM --resource-group myResourceGroup --yes || true
           az network nic delete --name myNIC --resource-group myResourceGroup || true
@@ -49,7 +49,7 @@ jobs:
           echo "ip=$IP" >> $GITHUB_OUTPUT
 
 
-  configure:
+  configure-vm:
     needs: terraform
     runs-on: ubuntu-latest
     steps:
@@ -76,8 +76,7 @@ jobs:
           ansible-playbook -i ansible/inventory.ini ansible/ansible.setup.yml
 
 
-  deploy:
-    needs: configure
+  build-docker-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -91,16 +90,26 @@ jobs:
           docker compose -f docker-compose.yml build
           docker compose -f docker-compose.yml push
 
+
+  deploy:
+    needs: [configure-vm, build-docker-image]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
       - name: Write SSH key
         run: | 
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Create inventory again
+      - name: Create inventory 
         run: |
           echo "[azure]" > ansible/inventory.ini
           echo "${{ needs.terraform.outputs.public_ip }} ansible_user=${{ secrets.SSH_USER }} ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+
+      - name: Set up ansible
+        run: sudo apt update && sudo apt install -y ansible sshpass
 
       - name: Run deploy with Ansible
         run: |
