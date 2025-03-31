@@ -8,9 +8,11 @@ permissions:
   id-token: write
   contents: read
 
-jobs: 
-  deploy:
+jobs:
+  terraform:
     runs-on: ubuntu-latest
+    outputs:
+      public_ip: ${{ steps.get_ip.outputs.ip }}
     env:
       TF_VAR_public_key: "${{ secrets.SSH_PUBLIC_KEY }}"
       TF_VAR_subscription_id: "${{ secrets.SUBSCRIPTION_ID }}"
@@ -19,67 +21,39 @@ jobs:
       TF_VAR_tenant_id: "${{ secrets.ARM_TENANT_ID }}"
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      - name: Azure Login
-        uses: azure/login@v2
+      - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-
-      # - name: Delete resource group if exists
-      #   run: |
-      #     az group delete --name myResourceGroup --yes --no-wait || true
-        
-      # - name: Wait for Azure to finish deleting RG
-      #   run: |
-      #     for i in {1..30}; do
-      #       echo "Checking if group still exists..."
-      #       if az group exists --name myResourceGroup | grep true; then
-      #         echo "Group still exists. Waiting 10s..."
-      #         sleep 10
-      #       else
-      #         echo "Group deleted!"
-      #         break
-      #       fi
-      #     done
-
-
-      - name: Delete VM if exists
+      - name: Clean up old VM (optional)
         run: |
-          az vm delete \
-            --name UbuntuVM \
-            --resource-group myResourceGroup \
-            --yes || true
+          az vm delete --name UbuntuVM --resource-group myResourceGroup --yes || true
+          az network nic delete --name myNIC --resource-group myResourceGroup || true
 
-          az network nic delete \
-            --name myNIC \
-            --resource-group myResourceGroup || true
-
-      - name: Wait for Azure to release deleted resources
-        run: sleep 30
-      
       - name: Terraform Init & Apply
         run: |
           cd terraform
           terraform init
           terraform apply -auto-approve
 
-      - name: Wait for Azure 
-        run: sleep 60
-
-      - name: Get Terraform output (public IP)
+      - name: Get Terraform output
         id: get_ip
         run: |
           cd terraform
           IP=$(terraform output -raw public_ip_address | tr -d '\r\n')
           echo "ip=$IP" >> $GITHUB_OUTPUT
+
+
+  configure:
+    needs: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Write SSH key
         run: | 
@@ -87,35 +61,48 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Initialization .ini file
-        run: echo "[azure]" > ansible/inventory.ini
-
-      - name: Copying secret data
+      - name: Create inventory file
         run: |
-          echo "${{ steps.get_ip.outputs.ip }} ansible_user=${{ secrets.SSH_USER }} ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
-          
-      - name: Check inventory contents
-        run: cat ansible/inventory.ini
+          echo "[azure]" > ansible/inventory.ini
+          echo "${{ needs.terraform.outputs.public_ip }} ansible_user=${{ secrets.SSH_USER }} ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+          cat ansible/inventory.ini
 
       - name: Set up ansible
-        run: |
-          sudo apt update && sudo apt install -y ansible sshpass
+        run: sudo apt update && sudo apt install -y ansible sshpass
 
-      - name: Configure azure usung ansible
+      - name: Configure Azure VM
         run: |
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            ansible-playbook -i ansible/inventory.ini ansible/ansible.setup.yml
+          export ANSIBLE_HOST_KEY_CHECKING=False
+          ansible-playbook -i ansible/inventory.ini ansible/ansible.setup.yml
 
-      - name: Build & Push docker image
+
+  deploy:
+    needs: configure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build & Push Docker images
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
           cd app
           docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
-          docker compose -f Docker-compose.yml build
-          docker compose -f Docker-compose.yml push
+          docker compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml push
 
-      - name: Deploy with Ansible
+      - name: Write SSH key
+        run: | 
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Create inventory again
+        run: |
+          echo "[azure]" > ansible/inventory.ini
+          echo "${{ needs.terraform.outputs.public_ip }} ansible_user=${{ secrets.SSH_USER }} ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+
+      - name: Run deploy with Ansible
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
           ansible-playbook -i ansible/inventory.ini ansible/ansible.deploy.yml \
