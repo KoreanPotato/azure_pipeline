@@ -41,13 +41,25 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-      - name: Get Terraform output (public IP)
+      - name: Get public IP via az CLI
         id: get_ip
         run: |
-          cd terraform
-          IP=$(terraform output -json | jq -r '.public_ip_address.value')          
-          echo "Полученный IP: $IP"
+          IP=$(az vm list-ip-addresses \
+            --name UbuntuVM \
+            --resource-group myResourceGroup \
+            --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" \
+            --output tsv)
           echo "ip=$IP" >> $GITHUB_OUTPUT
+          echo "Полученный IP: $IP"
+
+
+      # - name: Get Terraform output (public IP)
+      #   id: get_ip
+      #   run: |
+      #     cd terraform
+      #     IP=$(terraform output -raw public_ip_address | tr -d '\r\n')
+      #     echo "Полученный IP: $IP"
+      #     echo "::set-output name=ip::$IP"
 
   configure-vm:
     needs: terraform
