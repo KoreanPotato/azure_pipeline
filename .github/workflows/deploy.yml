@@ -128,10 +128,8 @@ jobs:
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
           ansible-playbook -i ansible/inventory.ini ansible/ansible.deploy.yml \
-          --extra-vars '
-          {
-            "backend_image": "${{ secrets.DOCKER_USERNAME }}/azureapp-backend:latest",
-            "frontend_image": "${{ secrets.DOCKER_USERNAME }}/azureapp-frontend:latest",
-            "docker_username": "${{ secrets.DOCKER_USERNAME }}",
-            "docker_password": "${{ secrets.DOCKER_PASSWORD }}"
-          }'
+          --extra-vars "backend_image=${{ secrets.DOCKER_USERNAME }}/azureapp-backend:latest \
+                  frontend_image=${{ secrets.DOCKER_USERNAME }}/azureapp-frontend:latest \
+                  docker_username=${{ secrets.DOCKER_USERNAME }} \
+                  docker_password=${{ secrets.DOCKER_PASSWORD }}"
+    
